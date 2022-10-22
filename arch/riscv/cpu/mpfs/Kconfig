@@ -1,0 +1,23 @@
+config MICROCHIP_MPFS # dummy
+	def_bool y
+	select GENERIC_RISCV
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+	imply SMP
+	imply CLK_CCF
+	imply CLK_MPFS
+	imply SYS_NS16550
+	imply MACB
+	imply MII
+	imply MMC
+	imply MMC_WRITE
+	imply MMC_SDHCI
+	imply MMC_SDHCI_CADENCE
+	imply MMC_SDHCI_ADMA
+	imply MMC_HS200_SUPPORT
+	imply DM_I2C
+	imply SYS_I2C_MICROCHIP
+	imply SPI
+	imply DM_SPI
+	imply MICROCHIP_COREQSPI
+
