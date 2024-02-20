@@ -38,26 +38,39 @@ static inline bool supports_extension(char ext)
 #if CONFIG_IS_ENABLED(RISCV_MMODE)
 	return csr_read(CSR_MISA) & (1 << (ext - 'a'));
 #elif CONFIG_CPU
+	char sext[2] = {ext};
 	struct udevice *dev;
-	int i;
+	const char *isa;
+	int ret, i;
 
 	uclass_find_first_device(UCLASS_CPU, &dev);
 	if (!dev) {
 		debug("unable to find the RISC-V cpu device\n");
 		return false;
 	}
-	const char *isa = dev_read_string(dev, "riscv,isa");
-	if (isa) {
-		/*
-		 * skip the first 4 characters (rv32|rv64) and
-		 * check until underscore
-		 */
-		for (i = 4; i < strlen(isa); i++) {
-			if (isa[i] == '_' || isa[i] == '\0')
-				break;
-			if (isa[i] == ext)
-				return true;
-		}
+
+	ret = dev_read_stringlist_search(dev, "riscv,isa-extensions", sext);
+	if (ret >=0)
+		return true;
+
+	/*
+	 * only if the property is not found (ENODATA) is the fallback used.
+	 */
+	if (ret != -ENODATA)
+		return false;
+
+	isa = dev_read_string(dev, "riscv,isa");
+	if (!isa)
+		return false;
+	/*
+	 * skip the first 4 characters (rv32|rv64) and
+	 * check until underscore
+	 */
+	for (i = 4; i < strlen(isa); i++) {
+		if (isa[i] == '_' || isa[i] == '\0')
+			break;
+		if (isa[i] == ext)
+			return true;
 	}
 
 	return false;
