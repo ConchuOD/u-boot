@@ -39,7 +39,6 @@ static inline bool supports_extension(char ext)
 	return csr_read(CSR_MISA) & (1 << (ext - 'a'));
 #elif CONFIG_CPU
 	struct udevice *dev;
-	char desc[32];
 	int i;
 
 	uclass_find_first_device(UCLASS_CPU, &dev);
@@ -47,15 +46,16 @@ static inline bool supports_extension(char ext)
 		debug("unable to find the RISC-V cpu device\n");
 		return false;
 	}
-	if (!cpu_get_desc(dev, desc, sizeof(desc))) {
+	const char *isa = dev_read_string(dev, "riscv,isa");
+	if (isa) {
 		/*
 		 * skip the first 4 characters (rv32|rv64) and
 		 * check until underscore
 		 */
-		for (i = 4; i < sizeof(desc); i++) {
-			if (desc[i] == '_' || desc[i] == '\0')
+		for (i = 4; i < strlen(isa); i++) {
+			if (isa[i] == '_' || isa[i] == '\0')
 				break;
-			if (desc[i] == ext)
+			if (isa[i] == ext)
 				return true;
 		}
 	}
