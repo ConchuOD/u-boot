@@ -10,6 +10,7 @@
 #include <init.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
+#include <asm/sections.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -49,6 +50,24 @@ static void read_device_serial_number(u8 *response, u8 response_size)
 
 	for (idx = 0; idx < response_size; idx++)
 		response_buf[idx] = readb(MPFS_SYS_SERVICE_MAILBOX + idx);
+}
+
+void *board_fdt_blob_setup(int *err)
+{
+	*err = 0;
+	/*
+	 * The devicetree provided by the previous stage is very minimal due to
+	 * severe space constraints. The firmware performs no fixups etc.
+	 * U-Boot, if providing a devicetree, almost certainly has a better
+	 * more complete one than the firmware so that provided by the firmware
+	 * is ignored for OF_SEPARATE.
+	 */
+	if (IS_ENABLED(CONFIG_OF_BOARD)) {
+		if (gd->arch.firmware_fdt_addr)
+			return (ulong *)(uintptr_t)gd->arch.firmware_fdt_addr;
+	}
+
+	return (ulong *)_end;
 }
 
 int board_init(void)
