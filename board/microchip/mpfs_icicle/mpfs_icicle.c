@@ -52,6 +52,49 @@ static void read_device_serial_number(u8 *response, u8 response_size)
 		response_buf[idx] = readb(MPFS_SYS_SERVICE_MAILBOX + idx);
 }
 
+int board_fit_config_name_match(const char *name)
+{
+
+	const void* fdt;
+	int list_len;
+
+	/*
+	 * If there's not a HSS provided dtb, there's no point re-selecting
+	 * since we'd just end up re-selecting the same dtb again.
+	 */
+	if (!gd->arch.firmware_fdt_addr)
+		return -EINVAL;
+
+	fdt = (void *)gd->arch.firmware_fdt_addr;
+
+	list_len = fdt_stringlist_count(fdt, 0, "compatible");
+	debug("list of length:%u\n", list_len);
+	if (list_len < 1)
+		return -EINVAL;
+
+	for (int i = 0; i < list_len; i++) {
+		int len;
+		const char *compat;
+		char *devendored;
+
+		compat = fdt_stringlist_get(fdt, 0, "compatible", i, &len);
+		if (!compat)
+			return -EINVAL;
+
+		strtok((char *)compat, ",");
+		devendored = strtok(NULL, ",");
+		debug("de-vendored compatible: %u\n", list_len);
+		if (!devendored)
+			return -EINVAL;
+
+		int match = strcmp(devendored, name);
+		if (!match)
+			return 0;
+	}
+
+	return -EINVAL;
+}
+
 void *board_fdt_blob_setup(int *err)
 {
 	*err = 0;
@@ -62,7 +105,7 @@ void *board_fdt_blob_setup(int *err)
 	 * more complete one than the firmware so that provided by the firmware
 	 * is ignored for OF_SEPARATE.
 	 */
-	if (IS_ENABLED(CONFIG_OF_BOARD)) {
+	if (IS_ENABLED(CONFIG_OF_BOARD) && !IS_ENABLED(CONFIG_MULTI_DTB_FIT)) {
 		if (gd->arch.firmware_fdt_addr)
 			return (ulong *)(uintptr_t)gd->arch.firmware_fdt_addr;
 	}
