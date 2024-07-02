@@ -52,6 +52,31 @@ static void read_device_serial_number(u8 *response, u8 response_size)
 		response_buf[idx] = readb(MPFS_SYS_SERVICE_MAILBOX + idx);
 }
 
+#ifdef CONFIG_MULTI_DTB_FIT
+int board_fit_config_name_match(const char *name)
+{
+
+	char compat[256] = "microchip,";
+	size_t max = 256 - strlen("microchip,");
+	int ret;
+
+	/*
+	 * If there's not a HSS provided dtb, there's no point re-selecting
+	 * since we'd just end up re-selecting the same dtb again.
+	 */
+	if (!gd->arch.firmware_fdt_addr)
+		return -EINVAL;
+
+	strncat(compat, name, max);
+	ret = fdt_node_check_compatible((void *)gd->arch.firmware_fdt_addr, 0, compat);
+	if (ret)
+		return -EINVAL;
+
+	debug("found a match for compat: %s\n", compat);
+	return 0;
+}
+#endif
+
 void *board_fdt_blob_setup(int *err)
 {
 	*err = 0;
