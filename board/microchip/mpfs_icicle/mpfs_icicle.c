@@ -52,6 +52,7 @@ static void read_device_serial_number(u8 *response, u8 response_size)
 		response_buf[idx] = readb(MPFS_SYS_SERVICE_MAILBOX + idx);
 }
 
+#if defined(CONFIG_MULTI_DTB_FIT)
 int board_fit_config_name_match(const char *name)
 {
 
@@ -94,6 +95,7 @@ int board_fit_config_name_match(const char *name)
 
 	return -EINVAL;
 }
+#endif
 
 void *board_fdt_blob_setup(int *err)
 {
